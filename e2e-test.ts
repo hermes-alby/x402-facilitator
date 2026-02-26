@@ -2,7 +2,7 @@
  * End-to-end test for the x402 Lightning facilitator + app
  *
  * Requires:
- *   - facilitator/.env  — NWC_URL for the receiver wallet (used by the facilitator server)
+ *   - app/.env          — MERCHANT_NWC_URL for the merchant/receiver wallet
  *   - .env.sender       — SENDER_NWC_URL for the sender wallet (pays the invoice)
  *   - Facilitator running on http://localhost:3000  (cd facilitator && npm run dev)
  *   - App running on http://localhost:4000          (cd app && npm run dev)

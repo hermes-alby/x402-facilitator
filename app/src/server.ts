@@ -6,6 +6,17 @@ import { requestContext } from "./request-context";
 
 const FACILITATOR_URL = process.env.FACILITATOR_URL || "http://localhost:3000";
 
+// Each merchant supplies their own NWC connection string via environment variable.
+// In a real multi-tenant platform this would come from a per-merchant config store,
+// but using an env var keeps the demo self-contained.
+const MERCHANT_NWC_URL = process.env.MERCHANT_NWC_URL;
+if (!MERCHANT_NWC_URL) {
+  throw new Error(
+    "MERCHANT_NWC_URL environment variable is required — " +
+      "set it to the merchant's Nostr Wallet Connect URL (nostr+walletconnect://...)",
+  );
+}
+
 // Connect to our Lightning facilitator
 const facilitatorClient = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
 
@@ -16,15 +27,20 @@ const resourceServer = new x402ResourceServer(facilitatorClient)
   .register("lightning:mainnet", new LightningSchemeNetworkServer(FACILITATOR_URL))
   .register("lightning:testnet", new LightningSchemeNetworkServer(FACILITATOR_URL));
 
-// Define which routes require payment and how much
+// Define which routes require payment and how much.
+// extra.nwcUrl identifies the merchant's wallet — the facilitator uses it to create
+// invoices against the correct NWC connection (multi-tenant support).
 const routes = {
   "GET /resource": {
     accepts: {
       scheme: "exact",
       price: { amount: "1", asset: "sat" }, // 1 satoshi
       network: "lightning:mainnet" as const,
-      payTo: "", // Lightning: the facilitator's NWC wallet receives the payment
+      payTo: "", // Lightning: payment goes directly to the merchant's NWC wallet
       maxTimeoutSeconds: 300,
+      extra: {
+        nwcUrl: MERCHANT_NWC_URL,
+      },
     },
     description: "A protected resource requiring 1 sat Lightning payment",
     mimeType: "application/json",

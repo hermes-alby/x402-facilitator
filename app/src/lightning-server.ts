@@ -13,6 +13,10 @@ interface InvoiceResponse {
  * for Lightning Network payments. Its key responsibility is enhancePaymentRequirements(),
  * which is called per-request to generate a fresh BOLT11 invoice and inject it into
  * the PaymentRequirements.extra field of each 402 response.
+ *
+ * Multi-tenant: the merchant's NWC URL is read from requirements.extra.nwcUrl and
+ * forwarded to the facilitator's POST /invoice endpoint so each merchant's invoice
+ * is created against their own wallet.
  */
 export class LightningSchemeNetworkServer implements SchemeNetworkServer {
   readonly scheme = "exact";
@@ -47,6 +51,17 @@ export class LightningSchemeNetworkServer implements SchemeNetworkServer {
     _supportedKind: { x402Version: number; scheme: string; network: Network; extra?: Record<string, unknown> },
     _facilitatorExtensions: string[],
   ): Promise<PaymentRequirements> {
+    const extra = (requirements.extra ?? {}) as Record<string, unknown>;
+
+    // Each merchant must supply their NWC URL in the route's extra.nwcUrl field.
+    const nwcUrl = extra.nwcUrl as string | undefined;
+    if (!nwcUrl) {
+      throw new Error(
+        "requirements.extra.nwcUrl is required for Lightning payments — " +
+          "set it in the route configuration to the merchant's NWC connection string",
+      );
+    }
+
     // When processing an X-PAYMENT submission, the middleware calls this again to rebuild
     // requirements for matching. We reuse the already-generated invoice (identified by
     // paymentHash stored in AsyncLocalStorage) so deepEqual matching succeeds.
@@ -58,7 +73,7 @@ export class LightningSchemeNetworkServer implements SchemeNetworkServer {
         return {
           ...requirements,
           extra: {
-            ...requirements.extra,
+            ...extra,
             invoice: stored.invoice,
             paymentHash: stored.paymentHash,
             expiresAt: stored.expiresAt,
@@ -68,11 +83,14 @@ export class LightningSchemeNetworkServer implements SchemeNetworkServer {
     }
 
     // No existing invoice — generate a fresh BOLT11 invoice via the facilitator.
+    // The merchant's nwcUrl is forwarded so the facilitator creates the invoice
+    // against the correct wallet.
     const response = await fetch(`${this.facilitatorUrl}/invoice`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         amount: Number(requirements.amount),
+        nwcUrl,
         description: "x402 payment",
         network: requirements.network,
       }),
@@ -88,7 +106,7 @@ export class LightningSchemeNetworkServer implements SchemeNetworkServer {
     return {
       ...requirements,
       extra: {
-        ...requirements.extra,
+        ...extra,
         invoice,
         paymentHash,
         expiresAt,

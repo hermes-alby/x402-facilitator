@@ -105,8 +105,14 @@ export class LightningExactScheme implements SchemeNetworkFacilitator {
     const { preimage } = payload.payload as { preimage: string };
     const extra = requirements.extra as { paymentHash: string };
 
-    // Confirm the invoice is paid via NWC
-    const result = await lookupInvoice(extra.paymentHash);
+    // Retrieve the stored invoice to get the merchant's NWC URL
+    const stored = getInvoice(extra.paymentHash);
+    if (!stored) {
+      throw new Error("Invoice not found — cannot confirm settlement");
+    }
+
+    // Confirm the invoice is paid via the merchant's NWC wallet
+    const result = await lookupInvoice(stored.nwcUrl, extra.paymentHash);
     if (!result.settledAt) {
       throw new Error("Invoice is not settled — payment has not been received");
     }

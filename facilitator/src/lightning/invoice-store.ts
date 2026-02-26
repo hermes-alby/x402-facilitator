@@ -5,6 +5,7 @@ export interface StoredInvoice {
   description: string;
   expiresAt: number; // unix timestamp (seconds)
   network: string;
+  nwcUrl: string; // merchant's NWC connection string — used to look up settlement
 }
 
 const store = new Map<string, StoredInvoice>();

@@ -1,14 +1,13 @@
 import { NWCClient } from "@getalby/sdk";
 
-let client: NWCClient | null = null;
+// Cache NWC clients by URL to avoid creating a new connection per request
+const clientCache = new Map<string, NWCClient>();
 
-function getClient(): NWCClient {
+function getClient(nwcUrl: string): NWCClient {
+  let client = clientCache.get(nwcUrl);
   if (!client) {
-    const nwcUrl = process.env.NWC_URL;
-    if (!nwcUrl) {
-      throw new Error("NWC_URL environment variable is required");
-    }
     client = new NWCClient({ nostrWalletConnectUrl: nwcUrl });
+    clientCache.set(nwcUrl, client);
   }
   return client;
 }
@@ -25,10 +24,11 @@ export interface LookupInvoiceResult {
 }
 
 export async function makeInvoice(
+  nwcUrl: string,
   amountSats: number,
   description: string = "x402 payment",
 ): Promise<MakeInvoiceResult> {
-  const c = getClient();
+  const c = getClient(nwcUrl);
   const result = await c.makeInvoice({
     amount: amountSats * 1000, // NWC amounts are in millisatoshis
     description,
@@ -40,8 +40,11 @@ export async function makeInvoice(
   };
 }
 
-export async function lookupInvoice(paymentHash: string): Promise<LookupInvoiceResult> {
-  const c = getClient();
+export async function lookupInvoice(
+  nwcUrl: string,
+  paymentHash: string,
+): Promise<LookupInvoiceResult> {
+  const c = getClient(nwcUrl);
   const result = await c.lookupInvoice({ payment_hash: paymentHash });
   return {
     settledAt: result.settled_at,

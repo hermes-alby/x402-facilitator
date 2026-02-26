@@ -47,16 +47,20 @@ app.get("/supported", (_req: Request, res: Response) => {
   res.json(facilitator.getSupported());
 });
 
-// POST /invoice — Lightning-specific: generate a fresh BOLT11 invoice
+// POST /invoice — Lightning-specific: generate a fresh BOLT11 invoice for a merchant.
+// The merchant's NWC connection string must be supplied in the request body so the
+// facilitator can create the invoice against the correct wallet (multi-tenant).
 // Called by the resource server's LightningSchemeNetworkServer.enhancePaymentRequirements()
 app.post("/invoice", async (req: Request, res: Response) => {
   try {
     const {
       amount,
+      nwcUrl,
       description = "x402 payment",
       network = "lightning:mainnet",
     } = req.body as {
       amount: unknown;
+      nwcUrl: unknown;
       description?: string;
       network?: string;
     };
@@ -66,7 +70,14 @@ app.post("/invoice", async (req: Request, res: Response) => {
       return;
     }
 
-    const result = await makeInvoice(amount, description);
+    if (typeof nwcUrl !== "string" || !nwcUrl.startsWith("nostr+walletconnect://")) {
+      res
+        .status(400)
+        .json({ error: "nwcUrl must be a valid Nostr Wallet Connect URL (nostr+walletconnect://...)" });
+      return;
+    }
+
+    const result = await makeInvoice(nwcUrl, amount, description);
 
     storeInvoice({
       invoice: result.invoice,
@@ -75,6 +86,7 @@ app.post("/invoice", async (req: Request, res: Response) => {
       description,
       expiresAt: result.expiresAt,
       network,
+      nwcUrl,
     });
 
     res.json({
