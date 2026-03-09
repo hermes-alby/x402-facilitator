@@ -24,6 +24,7 @@ export const lightningPaywallProvider = {
     const req = pr.accepts?.[0];
     const invoice = req?.extra?.invoice ?? "";
     const paymentHash = req?.extra?.paymentHash ?? "";
+    const expiresAt = req?.extra?.expiresAt ?? 0;
     const amountSats = Number(req?.amount ?? 0);
     const requirementsJson = JSON.stringify(req ?? {});
     const qrSvg = invoice
@@ -360,13 +361,15 @@ export const lightningPaywallProvider = {
 <script>
   const INVOICE = ${JSON.stringify(invoice)};
   const PAYMENT_HASH = ${JSON.stringify(paymentHash)};
+  const EXPIRES_AT = ${JSON.stringify(expiresAt)}; // unix seconds
   const RESOURCE_URL = window.location.href;
   const REQUIREMENTS = ${requirementsJson};
   const AMOUNT_SATS = ${amountSats};
   let pollTimer = null;
-  let pollInterval = 1500;
-  const POLL_MAX = 15000;
-  const POLL_FACTOR = 1.5;
+  const POLL_INITIAL = 1500;   // ms between first polls
+  const POLL_MAX = 15000;      // ms ceiling for backoff interval
+  const POLL_FACTOR = 1.5;     // backoff multiplier
+  let pollInterval = POLL_INITIAL;
   let paid = false;
 
   // Fetch live USD value — show as primary amount hero
@@ -404,6 +407,11 @@ export const lightningPaywallProvider = {
 
   async function checkPayment() {
     if (paid || !PAYMENT_HASH) return;
+    if (EXPIRES_AT > 0 && Math.floor(Date.now() / 1000) > EXPIRES_AT) {
+      document.getElementById('status-text').textContent = 'Invoice expired — please refresh to generate a new one.';
+      document.getElementById('spinner').style.display = 'none';
+      return;
+    }
     try {
       const res = await fetch('/invoice/status/' + PAYMENT_HASH);
       if (!res.ok) return;
@@ -459,7 +467,7 @@ export const lightningPaywallProvider = {
   }
 
   if (PAYMENT_HASH) {
-    pollTimer = setTimeout(checkPayment, pollInterval);
+    pollTimer = setTimeout(checkPayment, POLL_INITIAL);
   }
 </script>
 

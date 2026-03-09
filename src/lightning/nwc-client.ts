@@ -1,5 +1,8 @@
 import { NWCClient } from "@getalby/sdk";
 
+const MSATS_PER_SAT = 1000; // NWC amounts are in millisatoshis
+const DEFAULT_INVOICE_EXPIRY_SECS = 3600; // 1 hour fallback if wallet doesn't return expiry
+
 // Cache NWC clients by connection secret to avoid creating a new connection per request
 const clientCache = new Map<string, NWCClient>();
 
@@ -30,13 +33,13 @@ export async function makeInvoice(
 ): Promise<MakeInvoiceResult> {
   const c = getClient(nwcSecret);
   const result = await c.makeInvoice({
-    amount: amountSats * 1000, // NWC amounts are in millisatoshis
+    amount: amountSats * MSATS_PER_SAT,
     description,
   });
   return {
     invoice: result.invoice!,
     paymentHash: result.payment_hash,
-    expiresAt: result.expires_at ?? Math.floor(Date.now() / 1000) + 3600,
+    expiresAt: result.expires_at ?? Math.floor(Date.now() / 1000) + DEFAULT_INVOICE_EXPIRY_SECS,
   };
 }
 

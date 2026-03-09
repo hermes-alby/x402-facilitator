@@ -1,4 +1,6 @@
 import express, { Request, Response } from "express";
+
+const MSATS_PER_SAT = 1000;
 import { randomUUID } from "crypto";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -203,7 +205,7 @@ export async function createApp() {
       await storeInvoice({
         invoice: result.invoice,
         paymentHash: result.paymentHash,
-        amountMsats: amount * 1000,
+        amountMsats: amount * MSATS_PER_SAT,
         description,
         expiresAt: result.expiresAt,
         network,

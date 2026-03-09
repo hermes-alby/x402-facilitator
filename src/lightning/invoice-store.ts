@@ -1,5 +1,7 @@
 import { redis } from "../redis";
 
+const SETTLE_LOCK_TTL_SECS = 30; // max time to hold a settle lock before auto-release
+
 export interface StoredInvoice {
   invoice: string;
   paymentHash: string;
@@ -28,7 +30,7 @@ export async function deleteInvoice(paymentHash: string): Promise<void> {
 // Atomic Redis lock to prevent concurrent settle attempts for the same invoice.
 // Returns true if the lock was acquired, false if already being settled.
 export async function acquireSettleLock(paymentHash: string): Promise<boolean> {
-  const result = await redis.set(`settling:${paymentHash}`, "1", "EX", 30, "NX");
+  const result = await redis.set(`settling:${paymentHash}`, "1", "EX", SETTLE_LOCK_TTL_SECS, "NX");
   return result === "OK";
 }
 
