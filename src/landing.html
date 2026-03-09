@@ -404,13 +404,18 @@
         <span class="c0">#&nbsp;&nbsp;→ { "merchantId": "3f2a…" }</span><br/>
         <br/>
         <span class="c0"># 2. Protect a route on your server</span><br/>
-        <span class="c3">app</span>.<span class="c1">use</span>(<span class="c1">paymentMiddleware</span>({<br/>
-        &nbsp;&nbsp;<span class="c2">"GET /resource"</span>: {<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c1">scheme</span>: <span class="c2">"exact"</span>,&nbsp;&nbsp;<span class="c1">network</span>: <span class="c2">"lightning:mainnet"</span>,<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c1">price</span>: { <span class="c1">amount</span>: <span class="c2">"21"</span>, <span class="c1">asset</span>: <span class="c2">"sat"</span> },<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c1">extra</span>: { <span class="c1">merchantId</span>: <span class="c2">"3f2a…"</span> }<br/>
-        &nbsp;&nbsp;}<br/>
-        }));
+        <span class="c1">import</span> { <span class="c1">paymentMiddleware</span> } <span class="c1">from</span> <span class="c2">"@x402/express"</span>;<br/>
+        <br/>
+        <span class="c3">app</span>.<span class="c1">use</span>(<span class="c1">paymentMiddleware</span>(<br/>
+        &nbsp;&nbsp;{<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c2">"GET /resource"</span>: {<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c1">scheme</span>: <span class="c2">"exact"</span>, <span class="c1">network</span>: <span class="c2">"lightning:mainnet"</span>,<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c1">price</span>: { <span class="c1">amount</span>: <span class="c2">"21"</span>, <span class="c1">asset</span>: <span class="c2">"sat"</span> },<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c1">extra</span>: { <span class="c1">merchantId</span>: <span class="c2">"3f2a…"</span> }<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+        &nbsp;&nbsp;},<br/>
+        &nbsp;&nbsp;<span class="c2">"https://x402.albylabs.com"</span><br/>
+        ));
       </div>
     </div>
   </div>
@@ -643,7 +648,7 @@
 
       <div class="faq-item">
         <div class="faq-q">Do I need to run my own Lightning node?</div>
-        <div class="faq-a">No. Any NWC-compatible wallet works — Alby Hub, Mutiny, Zeus, and others. If you already have a Lightning wallet with NWC support, you're ready. You don't need to manage channels, liquidity, or routing.</div>
+        <div class="faq-a">No. Any <a href="https://nwc.dev" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px;">NWC-compatible wallet</a> works. If you already have a Lightning wallet with NWC support, you're ready. You don't need to manage channels, liquidity, or routing.</div>
       </div>
 
       <div class="faq-item">
