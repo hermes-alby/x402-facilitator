@@ -13,7 +13,7 @@ const MSATS_PER_SAT = 1000;
 
 // Plausible server-side event tracking for facilitator API calls.
 // Only active when PLAUSIBLE_ID is set (the script ID from the Plausible snippet).
-// Domain and URL are derived from the request so no BASE_URL env var is needed.
+// Domain and URL are derived from the request so BASE_URL is not needed here.
 function trackEvent(req: Request, eventName: string) {
   if (!process.env.PLAUSIBLE_ID) return;
   const url = `${req.protocol}://${req.get("host")}${req.path}`;
@@ -306,8 +306,7 @@ export async function createApp() {
   if (DEMO_NWC_SECRET) {
     const demoMerchantId = randomUUID();
     await redis.set(`merchant:${demoMerchantId}`, DEMO_NWC_SECRET);
-    const port = process.env.PORT || "3000";
-    app.use("/demo", createDemoRouter(`http://localhost:${port}`, demoMerchantId, facilitator));
+    app.use("/demo", createDemoRouter(process.env.BASE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`, demoMerchantId, facilitator));
   }
 
   return app;
